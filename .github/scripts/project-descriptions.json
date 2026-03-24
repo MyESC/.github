@@ -1,0 +1,30 @@
+{
+  "keywords": {
+    "bldc": "无刷直流电机控制项目",
+    "esc": "电子调速器项目",
+    "motor": "电机控制项目",
+    "filter": "滤波器项目",
+    "lib": "核心库项目",
+    "halless": "无感器控制项目",
+    "sensor": "传感器项目",
+    "foc": "FOC控制算法项目",
+    "pwm": "PWM控制项目",
+    "stm32": "STM32平台项目",
+    "hardware": "硬件设计项目",
+    "firmware": "固件项目",
+    "driver": "驱动程序项目",
+    "protocol": "通信协议项目",
+    "tool": "开发工具项目",
+    "demo": "演示项目",
+    "test": "测试项目",
+    "example": "示例项目"
+  },
+  "default_descriptions": {
+    "bldc": "无刷直流电机相关项目",
+    "esc": "电子调速器相关项目", 
+    "lib": "核心库项目",
+    "tool": "开发工具项目",
+    "demo": "演示项目",
+    "default": "开源项目"
+  }
+}

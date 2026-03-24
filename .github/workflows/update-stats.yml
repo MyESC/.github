@@ -1,0 +1,185 @@
+name: Update Project Statistics
+
+on:
+  schedule:
+    # 每天凌晨2点自动更新
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    # 允许手动触发
+
+jobs:
+  update-stats:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Update statistics
+        run: |
+          # 获取组织项目信息
+          REPOS=$(curl -s "https://api.github.com/orgs/MyESC/repos" | jq -r '.[] | .name')
+          
+          # 创建统计表格
+          echo "| 项目 | 星标 | Forks | 主要语言 | 最后更新 |" > stats_table.md
+          echo "|------|------|-------|----------|----------|" >> stats_table.md
+          
+          # 检查是否有新项目
+          echo "## 🆕 新项目检测" > new_projects.md
+          echo "" >> new_projects.md
+          
+          # 函数：根据项目名称生成描述
+          generate_description() {
+            local repo_name="$1"
+            local description="$2"
+            
+            # 如果有描述，直接使用
+            if [ "$description" != "无描述" ] && [ "$description" != "null" ] && [ -n "$description" ]; then
+              echo "$description"
+              return
+            fi
+            
+            # 根据关键词生成描述
+            local lower_name=$(echo "$repo_name" | tr '[:upper:]' '[:lower:]')
+            
+            if [[ "$lower_name" == *"bldc"* ]]; then
+              echo "无刷直流电机控制项目"
+            elif [[ "$lower_name" == *"esc"* ]]; then
+              echo "电子调速器项目"
+            elif [[ "$lower_name" == *"halless"* ]]; then
+              echo "无感器控制项目"
+            elif [[ "$lower_name" == *"filter"* ]]; then
+              echo "滤波器项目"
+            elif [[ "$lower_name" == *"lib"* ]]; then
+              echo "核心库项目"
+            elif [[ "$lower_name" == *"foc"* ]]; then
+              echo "FOC控制算法项目"
+            elif [[ "$lower_name" == *"pwm"* ]]; then
+              echo "PWM控制项目"
+            elif [[ "$lower_name" == *"stm32"* ]]; then
+              echo "STM32平台项目"
+            elif [[ "$lower_name" == *"hardware"* ]]; then
+              echo "硬件设计项目"
+            elif [[ "$lower_name" == *"firmware"* ]]; then
+              echo "固件项目"
+            elif [[ "$lower_name" == *"driver"* ]]; then
+              echo "驱动程序项目"
+            elif [[ "$lower_name" == *"protocol"* ]]; then
+              echo "通信协议项目"
+            elif [[ "$lower_name" == *"tool"* ]]; then
+              echo "开发工具项目"
+            elif [[ "$lower_name" == *"demo"* ]]; then
+              echo "演示项目"
+            elif [[ "$lower_name" == *"test"* ]]; then
+              echo "测试项目"
+            elif [[ "$lower_name" == *"example"* ]]; then
+              echo "示例项目"
+            elif [[ "$lower_name" == *"sensor"* ]]; then
+              echo "传感器项目"
+            elif [[ "$lower_name" == *"motor"* ]]; then
+              echo "电机控制项目"
+            else
+              echo "开源项目"
+            fi
+          }
+          
+          for repo in $REPOS; do
+            if [ "$repo" != ".github" ]; then
+              REPO_INFO=$(curl -s "https://api.github.com/repos/MyESC/$repo")
+              STARS=$(echo "$REPO_INFO" | jq -r '.stargazers_count // 0')
+              FORKS=$(echo "$REPO_INFO" | jq -r '.forks_count // 0')
+              LANGUAGE=$(echo "$REPO_INFO" | jq -r '.language // "-"')
+              UPDATED=$(echo "$REPO_INFO" | jq -r '.updated_at' | cut -d'T' -f1)
+              CREATED=$(echo "$REPO_INFO" | jq -r '.created_at' | cut -d'T' -f1)
+              DESCRIPTION=$(echo "$REPO_INFO" | jq -r '.description // "无描述"')
+              
+              # 生成智能描述
+              PROJECT_DESC=$(generate_description "$repo" "$DESCRIPTION")
+              
+              # 添加到统计表格
+              echo "| [$repo](https://github.com/MyESC/$repo) | $STARS | $FORKS | $LANGUAGE | $UPDATED |" >> stats_table.md
+              
+              # 检查是否为新项目（最近30天内创建）
+              CREATED_DATE=$(date -d "$CREATED" +%s 2>/dev/null || echo 0)
+              CURRENT_DATE=$(date +%s)
+              DAYS_SINCE_CREATED=$(( (CURRENT_DATE - CREATED_DATE) / 86400 ))
+              
+              if [ $DAYS_SINCE_CREATED -le 30 ]; then
+                echo "### 🆕 [$repo](https://github.com/MyESC/$repo)" >> new_projects.md
+                echo "**描述**: $PROJECT_DESC" >> new_projects.md
+                echo "**创建时间**: $CREATED" >> new_projects.md
+                echo "**主要语言**: $LANGUAGE" >> new_projects.md
+                echo "" >> new_projects.md
+              fi
+            fi
+          done
+          
+          # 更新README.md中的项目列表
+          PROJECTS_LIST=""
+          for repo in $REPOS; do
+            if [ "$repo" != ".github" ]; then
+              REPO_INFO=$(curl -s "https://api.github.com/repos/MyESC/$repo")
+              STARS=$(echo "$REPO_INFO" | jq -r '.stargazers_count // 0')
+              DESCRIPTION=$(echo "$REPO_INFO" | jq -r '.description // "无描述"')
+              
+              # 生成智能描述
+              PROJECT_DESC=$(generate_description "$repo" "$DESCRIPTION")
+              
+              PROJECTS_LIST="$PROJECTS_LIST- **[$repo](https://github.com/MyESC/$repo)** - $PROJECT_DESC ⭐ $STARS\n"
+            fi
+          done
+          
+          # 更新README.md
+          sed -i '/### 主要项目/,/### 项目特点/c\
+          ### 主要项目\
+          \
+          '"$(echo -e "$PROJECTS_LIST")"'\
+          \
+          ### 项目特点' README.md
+          
+          # 更新统计表格
+          sed -i '/### 项目统计/,/|------|------|-------|----------|----------|/c\
+          ### 项目统计\
+          \
+          | 项目 | 星标 | Forks | 主要语言 | 最后更新 |\
+          |------|------|-------|----------|----------|' README.md
+          
+          # 插入新的统计表格
+          sed -i '/|------|------|-------|----------|----------|/r stats_table.md' README.md
+          
+          # 如果有新项目，添加到README
+          if [ -s new_projects.md ] && [ "$(cat new_projects.md | wc -l)" -gt 4 ]; then
+            # 在项目统计后添加新项目部分
+            sed -i '/> 📊 \*\*自动更新\*\*: 此表格每天自动更新，展示最新的项目统计数据/a\
+          \
+          \
+          ## 🆕 最新项目\
+          \
+          以下是我们最近30天内添加的新项目：\
+          \
+          '"$(cat new_projects.md)" README.md
+          fi
+          
+          # 清理临时文件
+          rm stats_table.md new_projects.md
+
+      - name: Commit and push changes
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add README.md
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "🔄 Auto-update project statistics $(date '+%Y-%m-%d')"
+            git push
+          fi
