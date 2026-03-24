@@ -19,15 +19,23 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-
       - name: Update statistics
         run: |
+          set -e  # 遇到错误时退出
+          
+          # 检查jq是否可用
+          if ! command -v jq &> /dev/null; then
+            echo "jq is not installed, installing..."
+            sudo apt-get update && sudo apt-get install -y jq
+          fi
+          
           # 获取组织项目信息
           REPOS=$(curl -s "https://api.github.com/orgs/MyESC/repos" | jq -r '.[] | .name')
+          
+          if [ -z "$REPOS" ]; then
+            echo "No repositories found or API error"
+            exit 1
+          fi
           
           # 创建统计表格
           echo "| 项目 | 星标 | Forks | 主要语言 | 最后更新 |" > stats_table.md
