@@ -98,20 +98,37 @@ jobs:
               STARS=$(echo "$REPO_INFO" | jq -r '.stargazers_count // 0')
               FORKS=$(echo "$REPO_INFO" | jq -r '.forks_count // 0')
               LANGUAGE=$(echo "$REPO_INFO" | jq -r '.language // "-"')
-              UPDATED=$(echo "$REPO_INFO" | jq -r '.updated_at' | cut -d'T' -f1)
               CREATED=$(echo "$REPO_INFO" | jq -r '.created_at' | cut -d'T' -f1)
               DESCRIPTION=$(echo "$REPO_INFO" | jq -r '.description // "无描述"')
+              
+              # 获取最后commit时间
+              LAST_COMMIT=$(curl -s "https://api.github.com/repos/MyESC/$repo/commits?per_page=1" | jq -r '.[0].commit.committer.date // "1970-01-01"' | cut -d'T' -f1)
               
               # 生成智能描述
               PROJECT_DESC=$(generate_description "$repo" "$DESCRIPTION")
               
               # 添加到统计表格
-              echo "| [$repo](https://github.com/MyESC/$repo) | $STARS | $FORKS | $LANGUAGE | $UPDATED |" >> stats_table.md
+              echo "| [$repo](https://github.com/MyESC/$repo) | $STARS | $FORKS | $LANGUAGE | $LAST_COMMIT |" >> stats_table.md
               
               # 检查是否为新项目（最近30天内创建）
-              CREATED_DATE=$(date -d "$CREATED" +%s 2>/dev/null || echo 0)
-              CURRENT_DATE=$(date +%s)
-              DAYS_SINCE_CREATED=$(( (CURRENT_DATE - CREATED_DATE) / 86400 ))
+              # 使用跨平台的日期计算方法
+              if command -v python3 >/dev/null 2>&1; then
+                # 使用Python计算日期差
+                DAYS_SINCE_CREATED=$(python3 -c "
+import sys
+from datetime import datetime
+try:
+    created = datetime.strptime('$CREATED', '%Y-%m-%d')
+    current = datetime.now()
+    days = (current - created).days
+    print(days)
+except:
+    print(999)
+")
+              else
+                # 备用方法：简单的字符串比较（可能不够精确）
+                DAYS_SINCE_CREATED=999
+              fi
               
               if [ $DAYS_SINCE_CREATED -le 30 ]; then
                 echo "### 🆕 [$repo](https://github.com/MyESC/$repo)" >> new_projects.md
@@ -171,6 +188,10 @@ jobs:
           
           # 清理临时文件
           rm stats_table.md new_projects.md
+          
+          # 更新最后修改时间
+          CURRENT_DATE=$(date '+%Y年%m月%d日')
+          sed -i "s/\*最后更新: .*\*/*最后更新: $CURRENT_DATE*/" profile/README.md
 
       - name: Commit and push changes
         run: |
