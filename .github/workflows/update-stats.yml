@@ -165,16 +165,19 @@ jobs:
           
           # 如果有新项目，添加到README
           if [ -s new_projects.md ] && [ "$(cat new_projects.md | wc -l)" -gt 4 ]; then
-            # 在项目统计后添加新项目部分
-            NEW_PROJECTS_CONTENT=$(cat new_projects.md)
-            sed -i '/> 📊 \*\*自动更新\*\*: 此表格每天自动更新，展示最新的项目统计数据/a\
-\
-\
-## 🆕 最新项目\
-\
-以下是我们最近30天内添加的新项目：\
-\
-'"$NEW_PROJECTS_CONTENT" profile/README.md
+            # 创建新项目部分的内容
+            echo "" >> temp_new_projects.md
+            echo "## 🆕 最新项目" >> temp_new_projects.md
+            echo "" >> temp_new_projects.md
+            echo "以下是我们最近30天内添加的新项目：" >> temp_new_projects.md
+            echo "" >> temp_new_projects.md
+            cat new_projects.md >> temp_new_projects.md
+            
+            # 在项目统计后插入新项目部分
+            sed -i '/> 📊 \*\*自动更新\*\*: 此表格每天自动更新，展示最新的项目统计数据/r temp_new_projects.md' profile/README.md
+            
+            # 清理临时文件
+            rm temp_new_projects.md
           fi
           
           # 清理临时文件
