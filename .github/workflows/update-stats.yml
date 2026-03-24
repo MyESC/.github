@@ -114,17 +114,7 @@ jobs:
               # 使用跨平台的日期计算方法
               if command -v python3 >/dev/null 2>&1; then
                 # 使用Python计算日期差
-                DAYS_SINCE_CREATED=$(python3 -c "
-import sys
-from datetime import datetime
-try:
-    created = datetime.strptime('$CREATED', '%Y-%m-%d')
-    current = datetime.now()
-    days = (current - created).days
-    print(days)
-except:
-    print(999)
-")
+                DAYS_SINCE_CREATED=$(python3 -c "import sys; from datetime import datetime; created = datetime.strptime('$CREATED', '%Y-%m-%d'); current = datetime.now(); days = (current - created).days; print(days)" 2>/dev/null || echo "999")
               else
                 # 备用方法：简单的字符串比较（可能不够精确）
                 DAYS_SINCE_CREATED=999
