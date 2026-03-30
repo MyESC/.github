@@ -160,23 +160,11 @@ jobs:
             fi
           done
           
-          # 更新README.md
-          sed -i '/### 主要项目/,/### 项目特点/c\
-          ### 主要项目\
-          \
-          '"$(echo -e "$PROJECTS_LIST")"'\
-          \
-          ### 项目特点' profile/README.md
+          # 将项目列表写入临时文件（避免shell变量中的特殊字符影响sed）
+          printf '%b' "$PROJECTS_LIST" > /tmp/projects_list.txt
           
-          # 更新统计表格
-          sed -i '/### 项目统计/,/|------|------|-------|----------|----------|/c\
-          ### 项目统计\
-          \
-          | 项目 | 星标 | Forks | 主要语言 | 最后更新 |\
-          |------|------|-------|----------|----------|' profile/README.md
-          
-          # 插入新的统计表格
-          sed -i '/|------|------|-------|----------|----------|/r stats_table.md' profile/README.md
+          # 使用Python脚本更新README.md（避免sed处理含'-'的markdown列表时出错）
+          python3 .github/scripts/update_readme.py /tmp/projects_list.txt stats_table.md profile/README.md
           
           # 如果有新项目，添加到README
           if [ -s new_projects.md ] && [ "$(cat new_projects.md | wc -l)" -gt 4 ]; then
