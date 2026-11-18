@@ -11,10 +11,10 @@ MyESC 致力于开发创新的开源电子调速器（ESC）技术，通过开�
 ### 主要项目
 
 - **[BLDC-Halless](https://github.com/MyESC/BLDC-Halless)** - 无刷直流电机控制项目 ⭐ 4
-- **[BLDC-Filter](https://github.com/MyESC/BLDC-Filter)** - 无刷直流电机控制项目 ⭐ 2
-- **[MC_LIB](https://github.com/MyESC/MC_LIB)** - 核心库项目 ⭐ 10
+- **[BLDC-Filter](https://github.com/MyESC/BLDC-Filter)** - 无刷直流电机控制项目 ⭐ 0
+- **[MC_LIB](https://github.com/MyESC/MC_LIB)** - 核心库项目 ⭐ 0
 - **[nonliner_float](https://github.com/MyESC/nonliner_float)** - 开源项目 ⭐ 0
-- **[turbospin](https://github.com/MyESC/turbospin)** - 开源项目 ⭐ 2
+- **[turbospin](https://github.com/MyESC/turbospin)** - 开源项目 ⭐ 0
 
 ### 项目特点
 
@@ -87,4 +87,4 @@ MyESC 致力于开发创新的开源电子调速器（ESC）技术，通过开�
 
 ---
 
-*最后更新: 2026年11月17日*
+*最后更新: 2026年11月18日*
